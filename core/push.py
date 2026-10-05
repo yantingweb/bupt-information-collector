@@ -334,13 +334,24 @@ def log_send(cfg, title, results):
 
 
 def last_success(cfg):
-    """最后一次推送成功的时间。没有则返回 None。"""
+    """最后一次**真的推出去了**的时间。没有则返回 None。
+
+    `file` 通道不算 —— 它永远"成功"，但东西根本没离开这台机器。
+    把它算进来的话，`doctor` 会信心满满地报「最后一次推送成功」，
+    而手机上什么都没有。这正是这个项目最想避免的那种谎。
+    """
     p = _log_path(cfg)
     if not p.exists():
         return None
+
+    chs = (cfg.get("push") or {}).get("channels") or {}
+    not_real = {k for k, v in chs.items()
+                if isinstance(v, dict) and v.get("type", k) == "file"}
+
     hit = None
     for line in p.read_text(encoding="utf-8").splitlines():
         parts = line.split("\t")
-        if len(parts) >= 3 and parts[1].strip() == "OK":
+        if len(parts) >= 3 and parts[1].strip() == "OK" \
+                and parts[2].strip() not in not_real:
             hit = parts[0].strip()
     return hit
