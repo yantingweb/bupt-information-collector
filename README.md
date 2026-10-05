@@ -1,10 +1,13 @@
-# ddl-manager
+# bupt-information-collector
 
-**把「今天该看的信息」从三个地方捞出来，过滤掉噪音，只把要动手的那几条推到你手机上。**
+**把「今天该看的信息」从两个地方捞出来，过滤掉噪音，只把要动手的那几条推到你手机上。**
 
 它监听两类源：**校园信息门户**（教务 / 学院 / 学生处的通知公告）和**北邮人论坛**（科研进组、
 实习内推、竞赛招募）。每天定时扫三遍，过滤、去重、打分，然后通过**飞书**把「截止 / 报名 / 招募」
 这类需要你动手的条目推出去 —— 人在外面、没开电脑也能收到。
+
+说白了就是**一个信息监听器**：监听 → 去重 → 打分 → 推送，到手机为止。
+它不排日程，也不做目标管理 —— 那些是另一个问题，这个仓库不假装能一起解决。
 
 ---
 
@@ -42,7 +45,7 @@
 ## 快速开始
 
 ```bash
-git clone <this-repo> && cd ddl-manager
+git clone <this-repo> && cd bupt-information-collector
 
 python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
@@ -66,7 +69,7 @@ python run.py scan --push    # 真正扫一遍并推手机
 Linux / macOS 用 cron：
 
 ```cron
-30 7,12,19 * * *  cd /path/to/ddl-manager && .venv/bin/python run.py scan --push >> data/cron.log 2>&1
+30 7,12,19 * * *  cd /path/to/bupt-information-collector && .venv/bin/python run.py scan --push >> data/cron.log 2>&1
 ```
 
 ---
@@ -123,7 +126,7 @@ datetime.strptime(s[:len(fmt)], fmt)     # s = "2026-09-24" 被截成 "2026-09-"
 现在每次推送都写一行 `data/push.log`，失败会让进程以非零码退出，`run.py doctor`
 一条命令就能回答"我今天为什么没收到推送"。
 
-**计划任务名不能含冒号。** `ddl-manager 07:30` 会被 `Register-ScheduledTask` 拒掉
+**计划任务名不能含冒号。** `bupt-information-collector 07:30` 会被 `Register-ScheduledTask` 拒掉
 （`0x80070057 参数错误`，还不告诉你哪个参数错了）。另外注册完必须回查一遍，
 否则脚本会心安理得地打印"已注册"而实际一条都没装上。
 

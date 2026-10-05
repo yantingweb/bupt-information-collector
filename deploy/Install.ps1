@@ -9,7 +9,7 @@
 #>
 param([switch]$Uninstall)
 
-$TaskName = "ddl-manager"
+$TaskName = "bupt-info-collector"
 $Project  = Split-Path -Parent $PSScriptRoot
 $Python   = (Get-Command python -ErrorAction Stop).Source
 
