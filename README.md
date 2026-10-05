@@ -110,8 +110,27 @@ python run.py scan --push    # 真正扫一遍并推手机
 Linux / macOS 用 cron：
 
 ```cron
-30 7,12,19 * * *  cd /path/to/bupt-information-collector && .venv/bin/python run.py scan --push >> data/cron.log 2>&1
+30 7  * * *  cd /path/to/bupt-information-collector && .venv/bin/python run.py scan --push --heartbeat
+30 12,19 * * *  cd /path/to/bupt-information-collector && .venv/bin/python run.py scan --push
 ```
+
+### `--heartbeat` 是干什么的
+
+没有新内容时 `scan --push` 是**故意不推**的（不打扰）。但这样有个副作用：
+「今天平安无事」和「计划任务根本没跑」在手机上长得**一模一样**——都是没消息。
+
+所以每天固定那一次加上 `--heartbeat`：扫完主动报一句
+
+```
+[10-05] 扫描完成
+2026-10-05 扫描完成。
+没有新条目 —— 今天没有要你看的东西。
+```
+
+已经有真内容推送时它会自动省略，不重复打扰。`run.py doctor` 里也能看到最后一次扫描的时间，
+超过正常间隔一眼就能看出来。
+
+**一个只在有事时才说话的监控，等于没有监控。**
 
 ---
 

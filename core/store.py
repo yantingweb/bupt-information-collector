@@ -68,6 +68,35 @@ def append_items(cfg, item_list):
         p.write_text("\n".join(lines[-KEEP_ITEMS:]) + "\n", encoding="utf-8")
 
 
+# ── 最近一次扫描的结果 ──────────────────────────────────────────────────────
+# 没有新东西时 scan 是**故意不推**的（不打扰）。可这样有个副作用：
+# 「今天确实什么都没发生」和「系统早就坏了」在手机上是同一个样子 —— 都是没消息。
+# 所以把每次扫描的结果记下来，让心跳消息和 doctor 替它说话。
+
+def _scan_report_path(cfg) -> pathlib.Path:
+    return resolve(cfg, f"{cfg['paths']['data_dir']}/last_scan.json")
+
+
+def save_scan_report(cfg, per_source: dict, pushed: int = 0):
+    p = _scan_report_path(cfg)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(json.dumps({
+        "at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
+        "sources": per_source,
+        "pushed": pushed,
+    }, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def load_scan_report(cfg):
+    p = _scan_report_path(cfg)
+    if not p.exists():
+        return None
+    try:
+        return json.loads(p.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return None
+
+
 def read_items(cfg, limit=500, source=None, min_score=None):
     p = _items_path(cfg)
     if not p.exists():

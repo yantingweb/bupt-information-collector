@@ -121,10 +121,18 @@ def cmd_scan(cfg, args):
 
     out = write_inbox(cfg, all_items, label="全源扫描") if not args.store_only else None
 
+    pushed = 0
     if args.push:
         print("\n── 推送 ──")
-        n = _dispatch(cfg, all_items, force=args.push_force)
-        print(f"  推了 {n} 条" if n else "  没有够格的新条目，不打扰")
+        pushed = _dispatch(cfg, all_items, force=args.push_force)
+        print(f"  推了 {pushed} 条" if pushed else "  没有够格的新条目，不打扰")
+
+    report = {name: {"total": t, "new": n, "kept": k}
+              for name, t, n, _folded, k in summary}
+    store.save_scan_report(cfg, report, pushed=pushed)
+
+    if getattr(args, "heartbeat", False):
+        _send_heartbeat(cfg, report, pushed)
 
     print(f"\n{'─' * 60}")
     for name, total, new, folded, kept in summary:
@@ -165,6 +173,39 @@ def _dispatch(cfg, items, only=None, force=False):
         # 唯一的症状是「人没收到东西」——那要等他自己发现。详见 core/push.py 的 log_send
         _PUSH_FAILURES.append(title)
     return len(hot)
+
+
+def _send_heartbeat(cfg, report, pushed):
+    """每天固定那一次扫描，无论有没有新内容都报一声。
+
+    动机很实在：没新内容时 `scan --push` 是**故意不推**的（不打扰）。
+    可这样一来，「今天平安无事」和「计划任务根本没跑」在手机上完全没有区别 ——
+    都是没消息。心跳就是用来把这两种情况分开的。
+
+    已经有真推送发出时就不重复报 —— 那次的正文里本来就写了有什么新东西。
+    """
+    if pushed:
+        print("\n── 心跳 ──\n  （已经推过真内容，省略）")
+        return
+
+    import core.push as push
+
+    new = sum(int(v.get("new", 0)) for v in report.values())
+    day = datetime.date.today()
+    if new == 0:
+        # 不写死「门户/论坛」—— 他可能只扫了一个源（`scan byr --heartbeat`），
+        # 断言两个源都空了就是谎话。
+        body = (f"{day} 扫描完成。\n"
+                f"没有新条目 —— 今天没有要你看的东西。")
+    else:
+        body = (f"{day} 扫到 {new} 条新内容，但都没到动手线（{cfg['push']['action_line']} 分）。\n"
+                f"不需要做什么，已归档进 inbox。")
+    print("\n── 心跳 ──")
+    results = push.send(cfg, f"[{day:%m-%d}] 扫描完成", body)
+    for name, ok, detail in results:
+        print(f"  {'✓' if ok else '✗'} {name}: {detail[:110]}")
+    if not any(ok for _, ok, _ in results):
+        _PUSH_FAILURES.append("心跳")
 
 
 def cmd_push(cfg, args):
@@ -244,6 +285,13 @@ def cmd_doctor(cfg, args):
     else:
         print("\n  还没有任何成功推送记录 —— 通道一次都没通过。")
 
+    rep = store.load_scan_report(cfg)
+    if rep:
+        print(f"\n  最后一次扫描：{rep.get('at')}"
+              f"（推了 {rep.get('pushed', 0)} 条）")
+    else:
+        print("\n  还没有扫描记录 —— scan 一次都没成功跑过。")
+
     if args.send:
         print("\n── 端到端测试 ──")
         results = push.send(cfg, "自检：这条能收到就没问题",
@@ -268,6 +316,8 @@ def main():
     p.add_argument("--store-only", action="store_true", help="只落盘，不写 inbox")
     p.add_argument("--push", action="store_true", help="扫完把结果推到手机（定时任务用）")
     p.add_argument("--push-force", action="store_true", help="忽略已推记录，重推一遍")
+    p.add_argument("--heartbeat", action="store_true",
+                   help="没有新内容也推一条报平安（每天固定那一次用）")
 
     pc = sub.add_parser("cold", help="建去重基线，不推送")
     pc.add_argument("sources", nargs="*", choices=SOURCES)
