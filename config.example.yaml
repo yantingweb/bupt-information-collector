@@ -1,0 +1,66 @@
+# 全局配置。改这个文件，不要改代码。
+# 用法：cp config.example.yaml config.yaml  —— config.yaml 已被 gitignore，不会提交。
+# 凭证一律不放这里：登录态存在 .session/*.json，推送 webhook 存在 config.yaml 里。
+
+owner:
+  name: "你的名字"
+  grad_year: "29"        # 毕业届。决定校招类信息的去留（别的届直接扣分）
+  school: "北京邮电大学"
+  tz: Asia/Shanghai
+
+net:
+  delay_ms: 2500         # 每个请求之间的间隔，别把人家站点抓崩
+  timeout_ms: 30000
+  retries: 2
+  # 用哪个浏览器：chromium（playwright 自带，最省事）/ edge / chrome（本机真实浏览器）
+  # 前端会拦自动化浏览器时，换成 edge 或 chrome，指纹是真的
+  browser: chromium
+  executable_path: ""    # 留空自动找；要指定就填完整路径
+
+paths:
+  session_dir: .session
+  data_dir: data
+  inbox_dir: inbox
+
+# ── 信息源 ─────────────────────────────────────────────────────────────────
+sources:
+
+  byr:                                   # 北邮人论坛
+    enabled: true
+    base: https://bbs.byr.cn
+    session: byr_state.json              # 登录快照，跑 `run.py login byr` 生成
+    watchlist: watchlist.json            # 监听哪些版面
+    rows_per_board: 40
+
+  portal:                                # 教务 / 学院 / 学生处通知
+    enabled: true
+    session: portal_state.json
+    requires_login: false              # 全是公开公告页，不用登录就能抓
+    cold_window_days: 365              # 列表页本来就只有最新几条，不必再卡 30 天
+    # 通知列表页。每条 URL 都会做 diff，新增才推。
+    # 换成你自己学校/学院的列表页即可 —— 通用抽取，改版时只需改这里的 URL
+    lists:
+      - {name: 未来学院-通知, url: "https://future.bupt.edu.cn/index/tzgg.htm"}
+      - {name: 未来学院-动态, url: "https://future.bupt.edu.cn/index/xwdt.htm"}
+      - {name: 学生处-通知,   url: "https://xsc.bupt.edu.cn/xgdt/tzgg.htm"}
+    rows_per_list: 30
+
+# ── 推送 ───────────────────────────────────────────────────────────────────
+push:
+  action_line: 12        # ≥ 这条才算「要动手」，否则只归档
+  max_items: 12          # 手机上没人会读长文，宁可少推
+
+  # 通道：enabled 的才会发。一个挂了不影响别的。
+  channels:
+    # 飞书群自定义机器人：建个群 → 群设置 → 群机器人 → 添加「自定义机器人」→ 抄 URL
+    feishu:
+      enabled: true
+      type: feishu
+      webhook: "https://open.feishu.cn/open-apis/bot/v2/hook/在这里填你的-webhook"
+    # 下面这些是备胎。想用就去注册，把 key 填进来、enabled 改 true，别的不用动
+    serverchan: {enabled: false, type: serverchan, key: ""}     # sctapi.ftqq.com
+    pushplus:   {enabled: false, type: pushplus,   token: ""}   # pushplus.plus
+    bark:       {enabled: false, type: bark,       key: "", server: "https://api.day.app"}
+    telegram:   {enabled: false, type: telegram,   token: "", chat_id: ""}
+    smtp:       {enabled: false, type: smtp, host: "smtp.qq.com", port: 465,
+                 user: "", password: "", to: ""}

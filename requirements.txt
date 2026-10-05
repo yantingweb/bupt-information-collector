@@ -1,0 +1,8 @@
+# 依赖刻意压到两个。理由很实在：依赖越少，半年后它还跑得起来的概率越大。
+PyYAML>=6.0          # 配置、规则表全是 YAML
+playwright>=1.40     # 论坛与门户都要在真实浏览器里跑（会话接管，不逆向登录协议）
+
+# 装完 playwright 还要拉一次浏览器内核：
+#   playwright install chromium
+# 想用它抓前端有反自动化检测的站点，把 config.yaml 的 net.browser 换成 edge/chrome，
+# 直接用本机真实浏览器，UA 和指纹都是真的。

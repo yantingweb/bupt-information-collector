@@ -1,0 +1,15 @@
+# 本地配置：里面填了推送 webhook，不进版本库
+config.yaml
+
+# 登录会话快照 = 凭据，绝对不能进版本库
+.session/
+*.state.json
+
+# 抓取产物与本地状态
+data/
+inbox/*.md
+!inbox/.gitkeep
+
+__pycache__/
+*.pyc
+.venv/

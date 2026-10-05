@@ -1,0 +1,35 @@
+{
+  "_comment": "监听版面名单。tier: 1=机会窗口 2=能力/技术版 3=官方通知与升学信息。min_score=推送门槛，版面越水门槛越高。",
+
+  "Paper":        {"name": "科研与论文",   "tier": 1, "min_score": 3},
+  "ParttimeJob":  {"name": "兼职实习信息", "tier": 1, "min_score": 8},
+  "Job":          {"name": "应届求职广场", "tier": 1, "min_score": 10},
+
+  "Robot":        {"name": "机器人",       "tier": 1, "min_score": 5},
+  "ML_DM":        {"name": "机器学习与数据挖掘", "tier": 2, "min_score": 5},
+  "Embedded_System": {"name": "嵌入式系统", "tier": 2, "min_score": 6},
+
+  "GraduateSch":  {"name": "研究生院",     "tier": 2, "min_score": 4},
+  "AimGraduate":  {"name": "考研专版",     "tier": 2, "min_score": 6},
+  "GoAbroad":     {"name": "飞跃重洋",     "tier": 2, "min_score": 6},
+  "SCDA":         {"name": "北邮职业发展协会", "tier": 2, "min_score": 5},
+
+  "MathModel":    {"name": "数学建模",     "tier": 2, "min_score": 5},
+  "Innovation":   {"name": "创新实践",     "tier": 2, "min_score": 5},
+  "ACM_ICPC":     {"name": "算法与程序设计竞赛", "tier": 2, "min_score": 5},
+  "Circuit":      {"name": "电子电路",     "tier": 2, "min_score": 8},
+  "Smartcar":     {"name": "智能车",       "tier": 2, "min_score": 8},
+
+  "AcademicAffairs": {"name": "北邮教务处", "tier": 3, "min_score": 3},
+  "StudentAffairs":  {"name": "北邮学生处", "tier": 3, "min_score": 3},
+  "Graduation":      {"name": "毕业生之家", "tier": 3, "min_score": 5},
+
+  "SCS":  {"name": "计算机学院",         "tier": 3, "min_score": 3},
+  "SEE":  {"name": "电子工程学院",       "tier": 3, "min_score": 3},
+  "SA":   {"name": "自动化学院",         "tier": 3, "min_score": 3},
+  "SICE": {"name": "信息与通信工程学院", "tier": 3, "min_score": 3},
+  "SSE":  {"name": "软件学院",           "tier": 3, "min_score": 3},
+  "SS":   {"name": "理学院",             "tier": 3, "min_score": 4},
+
+  "jobinfo": {"name": "最新招聘信息",    "tier": 3, "min_score": 12}
+}
