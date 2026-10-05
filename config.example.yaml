@@ -53,10 +53,15 @@ push:
   # 通道：enabled 的才会发。一个挂了不影响别的。
   channels:
     # 飞书群自定义机器人：建个群 → 群设置 → 群机器人 → 添加「自定义机器人」→ 抄 URL
+    #
+    # ⚠️ 这里的 URL 是占位符，**不换成你自己的，推送一律失败**。
+    #    占位符故意留着，是为了让「还没配」这件事在 push.log 里有一行明确的失败记录，
+    #    而不是安静地什么都不发。填真的之前，`run.py scan --push` 会报：
+    #    「webhook 还是模板里的占位符。去飞书建个群 → …」
     feishu:
       enabled: true
       type: feishu
-      webhook: "https://open.feishu.cn/open-apis/bot/v2/hook/在这里填你的-webhook"
+      webhook: "https://open.feishu.cn/open-apis/bot/v2/hook/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
     # 下面这些是备胎。想用就去注册，把 key 填进来、enabled 改 true，别的不用动
     serverchan: {enabled: false, type: serverchan, key: ""}     # sctapi.ftqq.com
     pushplus:   {enabled: false, type: pushplus,   token: ""}   # pushplus.plus

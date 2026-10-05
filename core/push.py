@@ -163,18 +163,31 @@ def _post_json(url, obj, timeout=20):
                  timeout=timeout)
 
 
+# 模板里的占位符。单独认出来，不然用户看到的是一串 UnicodeEncodeError
+_PLACEHOLDER_HINTS = ("在这里填", "填你的", "your-webhook", "xxxx", "<", ">")
+
+
 def _send_feishu(ch, title, text):
     """飞书群自定义机器人（webhook）。
 
     建群 → 群设置 → 群机器人 → 添加「自定义机器人」→ 抄下 webhook URL。
     成功响应 `{"code":0,...}`，老版本网关返回 `{"StatusCode":0,...}`，两种都认。
     """
-    url = ch.get("webhook")
+    url = str(ch.get("webhook") or "").strip()
     if not url:
         return False, "缺 webhook"
+    # 占位符必须单独认出来。不认的话，URL 里的中文会让 urllib 抛 UnicodeEncodeError，
+    # 用户看到的是一句跟"你还没填密钥"毫无关系的英文报错 —— 照着模板直接跑就会撞上。
+    if any(h in url for h in _PLACEHOLDER_HINTS):
+        return False, ("webhook 还是模板里的占位符。去飞书建个群 → 群设置 → 群机器人 → "
+                       "添加「自定义机器人」，把它给的 URL 填进 config.yaml")
+    if not url.startswith("https://"):
+        return False, f"webhook 看着不像 URL：{url[:50]}"
     payload = {"msg_type": "text", "content": {"text": f"{title}\n\n{text}"}}
     try:
         s, b = _post_json(url, payload)
+    except UnicodeEncodeError:
+        return False, "webhook 里有非 ASCII 字符 —— 检查 config.yaml 是不是还留着模板里的中文"
     except Exception as e:
         return False, f"{type(e).__name__}: {e}"
     flat = b.replace(" ", "")

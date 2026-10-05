@@ -11,6 +11,47 @@
 
 ---
 
+## 先说清楚：谁 clone 下来能直接用
+
+**这个仓库是为北邮写的**，两个源都是北邮的站点：
+
+| 源 | 通用性 | 换学校要改什么 |
+|---|---|---|
+| `sources/portal.py` 信息门户 | **通用**。它不认具体站点，只找「链接 + 邻近日期」这种列表行 | 改 `config.yaml` 里 `sources.portal.lists` 的 URL |
+| `sources/byr.py` 北邮人论坛 | **北邮专属**。登录态（`UTMPUSERID` cookie）、版面代号（`Paper` / `Robot`…）、正文选择器（`td.a-content`）都绑死在 BYR 上 | 得另写一个源 |
+
+所以：
+
+- **北邮的同学** —— clone 下来五分钟能用，`run.py login byr` 登一次就行。
+- **别的学校的同学** —— 能直接复用的是**中间三层**（去重 / 打分 / 推送）和通用的 `portal.py`。
+  要接自己的论坛或教务，写一个源即可，契约只有一个。
+
+### 写一个新源要做的全部事情
+
+1. 新建 `sources/<名字>.py`，实现两个函数：
+
+```python
+def fetch(cfg, only=None, quiet=False):
+    """返回 (items_by_channel, watch, errors)
+
+    items_by_channel : {栏目名: [Item, ...]}
+    watch            : None 即可（给「关注某个帖子」这类需求预留的）
+    errors           : 抓失败的信息列表。会打印出来，但不影响别的源
+    """
+
+def read(cfg, url, max_chars=1200):
+    """返回 (title, body) —— 给 `run.py read <目标>` 用"""
+```
+
+2. 在 `sources/__init__.py` 的 `REGISTRY` 里加一行。
+3. 在 `config.yaml` 的 `sources:` 下加一段配置。`run.py scan <名字>` 就能跑。
+
+**`Item` 是全系统唯一的契约**（`core/schema.py`）：`source / channel / title / url` 必填，
+其余字段能给就给 —— 其中 `deadline` 最值钱，给了它推送会把这行排到最前面。
+下游三层（去重 / 打分 / 推送）完全不关心数据是从哪来的。
+
+---
+
 ## 解决的问题
 
 信息本身不贵，**漏掉信息的代价才贵**。保研报名、进组招募、实习内推这类通知，共同点是：
