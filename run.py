@@ -132,7 +132,7 @@ def cmd_scan(cfg, args):
     store.save_scan_report(cfg, report, pushed=pushed)
 
     if getattr(args, "heartbeat", False):
-        _send_heartbeat(cfg, report, pushed)
+        _send_heartbeat(cfg, report, pushed, all_items)
 
     print(f"\n{'─' * 60}")
     for name, total, new, folded, kept in summary:
@@ -175,31 +175,54 @@ def _dispatch(cfg, items, only=None, force=False):
     return len(hot)
 
 
-def _send_heartbeat(cfg, report, pushed):
+def _f(it, name, default=""):
+    """Item 或 dict 都能取字段。"""
+    if isinstance(it, dict):
+        return it.get(name, default)
+    return getattr(it, name, default)
+
+
+def _send_heartbeat(cfg, report, pushed, items=None):
     """每天固定那一次扫描，无论有没有新内容都报一声。
 
     动机很实在：没新内容时 `scan --push` 是**故意不推**的（不打扰）。
     可这样一来，「今天平安无事」和「计划任务根本没跑」在手机上完全没有区别 ——
     都是没消息。心跳就是用来把这两种情况分开的。
 
-    已经有真推送发出时就不重复报 —— 那次的正文里本来就写了有什么新东西。
+    但只报「N 条」还差一步：那几条**是什么**得写出来。
+    够不到动手线的东西本来就一条都不会推，只报个数的话
+    他永远不知道扫到了什么 —— 所以下面把它们原样贴出来（含链接）。
     """
-    if pushed:
-        print("\n── 心跳 ──\n  （已经推过真内容，省略）")
-        return
-
     import core.push as push
 
     new = sum(int(v.get("new", 0)) for v in report.values())
     day = datetime.date.today()
+    # 从没单独推过的那些，就是他要看的
+    left = push.unpush(cfg, items or [])
+
+    L = []
     if new == 0:
-        # 不写死「门户/论坛」—— 他可能只扫了一个源（`scan byr --heartbeat`），
-        # 断言两个源都空了就是谎话。
-        body = (f"{day} 扫描完成。\n"
-                f"没有新条目 —— 今天没有要你看的东西。")
+        # 不写死源名 —— 他可能只扫了一个源（`scan byr --heartbeat`），
+        # 断言其它源也空了就是谎话。
+        L.append(f"{day} 扫描完成。没有新条目 —— 今天没有要你看的东西。")
     else:
-        body = (f"{day} 扫到 {new} 条新内容，但都没到动手线（{cfg['push']['action_line']} 分）。\n"
-                f"不需要做什么，已归档进 inbox。")
+        L.append(f"{day} 扫到 {new} 条新内容。")
+        if pushed:
+            L.append(f"其中 {pushed} 条够格单独推送的，已经发过了。")
+        if left:
+            L.append("")
+            L.append("下面这些没单独推，贴一下：")
+            for it in sorted(left, key=lambda x: -_score(x))[:6]:
+                L.append(f"· [{_score(it)}分] {str(_f(it, 'title'))[:44]}")
+                u = _f(it, "url")
+                if u:
+                    L.append(f"  {u}")
+            if len(left) > 6:
+                L.append(f"…另有 {len(left) - 6} 条，见 inbox/。")
+        elif not pushed:
+            L.append("（没有需要动手的）")
+
+    body = "\n".join(L)
     print("\n── 心跳 ──")
     results = push.send(cfg, f"[{day:%m-%d}] 扫描完成", body)
     for name, ok, detail in results:
